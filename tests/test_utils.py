@@ -29,3 +29,27 @@ def test_nibbles_to_bytes_to_nibbles(nibble_list):
 
     byte_str = b''.join(nibbles_to_bytes(nibble_list))
     assert list(bytes_to_nibbles(byte_str)) == nibble_list
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    (
+        (b'', ()),
+        (b'\x2c', (2, 12)),
+        (b'\xff\x00', (15, 15, 0, 0)),
+    ),
+)
+def test_bytes_to_nibbles(input, expected):
+    assert tuple(bytes_to_nibbles(input)) == expected
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    (
+        ((), b''),
+        ((2, 12), b'\x2c'),
+        ((15, 15, 0, 0), b'\xff\x00'),
+    ),
+)
+def test_nibbles_to_bytes(input, expected):
+    assert b''.join(nibbles_to_bytes(input)) == expected
