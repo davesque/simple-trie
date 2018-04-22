@@ -7,6 +7,7 @@ import pytest
 from simpletrie.utils import (
     bytes_to_nibbles,
     nibbles_to_bytes,
+    hex_prefix,
 )
 
 
@@ -53,3 +54,28 @@ def test_bytes_to_nibbles(input, expected):
 )
 def test_nibbles_to_bytes(input, expected):
     assert b''.join(nibbles_to_bytes(input)) == expected
+
+
+@given(nibble_lists)
+def test_hex_prefix(nibble_list):
+    bytes_with_flag = b''.join(hex_prefix(nibble_list, True))
+    bytes_without_flag = b''.join(hex_prefix(nibble_list, False))
+
+    nibbles_with_flag = list(bytes_to_nibbles(bytes_with_flag))
+    nibbles_without_flag = list(bytes_to_nibbles(bytes_without_flag))
+
+    if len(nibble_list) % 2 == 0:
+        assert nibbles_with_flag[0] == 2
+        assert nibbles_without_flag[0] == 0
+
+        assert nibbles_with_flag[1] == 0
+        assert nibbles_without_flag[1] == 0
+
+        assert nibbles_with_flag[2:] == nibble_list
+        assert nibbles_without_flag[2:] == nibble_list
+    else:
+        assert nibbles_with_flag[0] == 3
+        assert nibbles_without_flag[0] == 1
+
+        assert nibbles_with_flag[1:] == nibble_list
+        assert nibbles_without_flag[1:] == nibble_list
