@@ -54,13 +54,6 @@ class Branch(Node):
         yield self.value
 
 
-def hex_prefix(xs, t):
-    f = 2 if t else 0
-
-    if len(xs) % 2 == 0:
-        return
-
-
 class Trie:
     __slots__ = ('_root_hsh', '_db')
 
