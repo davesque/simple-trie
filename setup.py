@@ -3,6 +3,7 @@ from setuptools import (
     find_packages,
 )
 
+
 extras_require={
     'dev': [
         'pytest',
@@ -10,6 +11,7 @@ extras_require={
         'ipython',
     ],
 }
+
 
 setup(
     name='simple-trie',
@@ -20,8 +22,12 @@ setup(
     author_email='davesque@gmail.com',
     url='https://github.com/ethereum/simple-trie',
     include_package_data=True,
+    install_requires=[
+        'eth-utils',
+        'eth-hash[pycryptodome]',
+    ],
     extras_require=extras_require,
-    py_modules=['trie'],
+    py_modules=['simpletrie'],
     license="MIT",
     zip_safe=False,
     keywords='ethereum',
