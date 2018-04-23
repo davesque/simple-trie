@@ -12,11 +12,7 @@ class Branch(Node):
     __slots__ = ('nodes', 'value')
 
     def __init__(self, nodes=None, value=None):
-        if nodes is None:
-            self.nodes = [None] * 16
-        else:
-            self.nodes = nodes
-
+        self.nodes = [None] * 16
         self.value = value
 
     def __getitem__(self, key):
@@ -29,7 +25,7 @@ class Branch(Node):
     def is_empty(self):
         return all(n is None for n in self.nodes) and self.value is None
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no coverage
         node_reprs = []
 
         for i, n in enumerate(self.nodes):
@@ -116,6 +112,18 @@ class SimpleTrie:
         if node_.is_empty:
             node[nib] = None
 
+    def _len(self, node):
+        """
+        Returns the number of nodes under ``node`` in which a value is stored.
+        """
+        if node is None:
+            return 0
+
+        if node.value is not None:
+            return 1 + sum(self._len(n) for n in node.nodes)
+
+        return sum(self._len(n) for n in node.nodes)
+
     def __getitem__(self, key):
         return self._get(self._root, tuple(bytes_to_nibbles(key)), 0)
 
@@ -125,5 +133,8 @@ class SimpleTrie:
     def __delitem__(self, key):
         self._del(self._root, tuple(bytes_to_nibbles(key)), 0)
 
-    def __repr__(self):
+    def __len__(self):
+        return self._len(self._root)
+
+    def __repr__(self):  # pragma: no coverage
         return repr(self._root)
