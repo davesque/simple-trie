@@ -9,10 +9,10 @@ from simpletrie.trie import (
 )
 
 
-key_value_pairs = st.tuples(st.binary(max_size=32), st.binary())
+key_value_pairs = st.tuples(st.binary(max_size=100), st.binary())
 
 
-@given(st.lists(key_value_pairs, max_size=10, unique_by=lambda pair: pair[0]))
+@given(st.lists(key_value_pairs, max_size=100, unique_by=lambda pair: pair[0]))
 def test_simple_trie_properties(pairs):
     t = SimpleTrie()
 
