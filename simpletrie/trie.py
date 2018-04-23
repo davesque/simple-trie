@@ -124,6 +124,15 @@ class SimpleTrie:
 
         return sum(self._len(n) for n in node.nodes)
 
+    def _size(self, node):
+        """
+        Returns the number of nodes under ``node``.
+        """
+        if node is None:
+            return 0
+
+        return 1 + sum(self._len(n) for n in node.nodes)
+
     def __getitem__(self, key):
         return self._get(self._root, tuple(bytes_to_nibbles(key)), 0)
 
@@ -135,6 +144,10 @@ class SimpleTrie:
 
     def __len__(self):
         return self._len(self._root)
+
+    @property
+    def size(self):
+        return self._size(self._root)
 
     def __repr__(self):  # pragma: no coverage
         return repr(self._root)
