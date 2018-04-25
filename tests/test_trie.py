@@ -129,9 +129,11 @@ def test_leaf_insert():
 
 def test_extension_insert():
     # Nodes have same key
-    branch = Branch()
-    branch[10] = Leaf((), b'\x00')
-    branch[11] = Leaf((), b'\x01')
+    branch = (
+        Branch() +
+        Leaf((), b'\x00') +
+        Leaf((), b'\x01')
+    )
     leaf = Leaf((10,), b'\x02')
 
     actual = Extension((10,), branch) + leaf
