@@ -78,20 +78,25 @@ def test_leaf_head(leaf, i, head):
 
 
 @pytest.mark.parametrize(
-    'leaf, i, tail',
+    'node, i, tail',
     (
         (Leaf((10, 11, 12), b'\x00'), None, Leaf((11, 12), b'\x00')),
         (Leaf((10, 11, 12), b'\x00'), 0, Leaf((10, 11, 12), b'\x00')),
         (Leaf((10, 11, 12), b'\x00'), 1, Leaf((11, 12), b'\x00')),
         (Leaf((10, 11, 12), b'\x00'), 2, Leaf((12,), b'\x00')),
         (Leaf((10, 11, 12), b'\x00'), 3, Leaf((), b'\x00')),
+        (Extension((10, 11, 12), Branch()), None, Extension((11, 12), Branch())),
+        (Extension((10, 11, 12), Branch()), 0, Extension((10, 11, 12), Branch())),
+        (Extension((10, 11, 12), Branch()), 1, Extension((11, 12), Branch())),
+        (Extension((10, 11, 12), Branch()), 2, Extension((12,), Branch())),
+        (Extension((10, 11, 12), Branch()), 3, Branch()),
     ),
 )
-def test_leaf_tail(leaf, i, tail):
+def test_node_tail(node, i, tail):
     if i is None:
-        assert leaf.tail() == tail
+        assert node.tail() == tail
     else:
-        assert leaf.tail(i) == tail
+        assert node.tail(i) == tail
 
 
 def test_leaf_insert():

@@ -144,6 +144,19 @@ class Extension(Node):
     def is_shallow(self):
         return len(self.key) == 0
 
+    def tail(self, i=1):
+        """
+        Returns a new extension node with the same referent node as this node
+        and excluding the initial ``i`` items in this node's key.  If the
+        resulting extension node is shallow, return its referent node instead.
+        """
+        tl = type(self)(self.key[i:], self.node)
+
+        if tl.is_shallow:
+            return tl.node
+
+        return tl
+
     def get(self, key):
         i = len(self.key)
         head, tail = key[:i], key[i:]
