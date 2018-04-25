@@ -82,9 +82,11 @@ class Leaf(Node):
         # General cases
 
         # Determine length of common prefix
-        for i, (k1, k2) in enumerate(zip(self.key, other.key)):
+        i = 0
+        for k1, k2 in zip(self.key, other.key):
             if k1 != k2:
                 break
+            i += 1
 
         if i > 0:
             # Nodes share common prefix
@@ -151,9 +153,11 @@ class Extension(Node):
         # General cases
 
         # Determine length of common prefix
-        for i, (k1, k2) in enumerate(zip(self.key, other.key)):
+        i = 0
+        for k1, k2 in zip(self.key, other.key):
             if k1 != k2:
                 break
+            i += 1
 
         if i > 0:
             # Nodes share common prefix
