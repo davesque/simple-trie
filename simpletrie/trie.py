@@ -125,6 +125,53 @@ class Extension(Node):
     def is_empty(self):
         return self.node is None
 
+    def insert(self, other):
+        # Special cases
+
+        len_self = len(self.key)
+
+        if self.key == other.key:
+            # Nodes share same key
+            return self.node + Leaf((), other.value)
+
+        if len_self == 0:
+            # Self is zero-length
+            return self.node + other
+
+        if len(other.key) == 0:
+            # Inserting zero-length leaf
+            branch = Branch(value=other.value)
+            if len_self == 1:
+                branch[self.key[0]] = self.node
+            else:
+                branch[self.key[0]] = Extension(self.key[:1], self.node)
+
+            return branch
+
+        # General cases
+
+        # Determine length of common prefix
+        for i, (k1, k2) in enumerate(zip(self.key, other.key)):
+            if k1 != k2:
+                break
+
+        if i > 0:
+            # Nodes share common prefix
+            return Extension(
+                self.key[:i],
+                Extension(self.key[i:], self.node) + Leaf(other.key[i:], other.value),
+            )
+
+        # Nodes share no common prefix
+        branch = Branch()
+        if len_self == 1:
+            branch[self.key[0]] = self.node
+        else:
+            branch[self.key[0]] = Extension(self.key[i:], self.node)
+        branch[other.key[0]] = Leaf(other.key[1:], other.value)
+
+        return branch
+
     def copy(self):
         return type(self)(self.key, self.node.copy())
 
@@ -160,7 +207,21 @@ class Branch(Node):
         return all(n is None for n in self.nodes) and self.value is None
 
     def insert(self, other):
-        return other
+        branch = Branch(self.nodes[:], self.value)
+
+        if len(other.key) == 0:
+            branch.value = other.value
+            return branch
+
+        head, tail = other.key[0], other.key[1:]
+        curr = branch[head]
+
+        if curr is None:
+            branch[head] = Leaf(tail, other.value)
+        else:
+            branch[head] = curr + Leaf(tail, other.value)
+
+        return branch
 
     def copy(self):
         return type(self)(
