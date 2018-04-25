@@ -265,7 +265,7 @@ class SimpleTrie:
     __slots__ = ('_root',)
 
     def __init__(self):
-        self._root = Branch()
+        self._root = Leaf((), None)
 
     def _get(self, node, key, i):
         """
@@ -354,7 +354,10 @@ class SimpleTrie:
         return self._get(self._root, tuple(bytes_to_nibbles(key)), 0)
 
     def __setitem__(self, key, value):
-        self._set(self._root, tuple(bytes_to_nibbles(key)), 0, value)
+        self._root += Leaf(
+            tuple(bytes_to_nibbles(key)),
+            value,
+        )
 
     def __delitem__(self, key):
         self._del(self._root, tuple(bytes_to_nibbles(key)), 0)
