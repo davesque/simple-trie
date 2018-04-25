@@ -241,6 +241,9 @@ class Branch(Node):
 
     def get(self, key):
         if len(key) == 0:
+            if self.value is None:
+                raise KeyError('Key not found')
+
             return self.value
 
         head, tail = key[0], key[1:]
@@ -311,10 +314,16 @@ class SimpleTrie:
     __slots__ = ('_root',)
 
     def __init__(self):
-        self._root = Leaf((), None)
+        self._root = None
 
     def __getitem__(self, key):
-        return self._root.get(tuple(bytes_to_nibbles(key)))
+        if self._root is None:
+            raise KeyError(repr(key))
+
+        try:
+            return self._root.get(tuple(bytes_to_nibbles(key)))
+        except KeyError:
+            raise KeyError(repr(key))
 
     def __setitem__(self, key, value):
         self._root += Leaf(
@@ -326,6 +335,9 @@ class SimpleTrie:
         self._root -= tuple(bytes_to_nibbles(key))
 
     def __len__(self):
+        if self._root is None:
+            return 0
+
         return len(self._root)
 
     def __repr__(self):  # pragma: no coverage

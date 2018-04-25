@@ -160,8 +160,8 @@ def test_simple_trie_properties(pairs):
         # For each key and value added...
 
         # Attempting to look up or delete non-existant key should cause error
-        # with pytest.raises(KeyError, match='Key not found'):
-        #     t[key]
+        with pytest.raises(KeyError):
+            t[key]
         # with pytest.raises(KeyError, match='Key not found'):
         #     del t[key]
 
