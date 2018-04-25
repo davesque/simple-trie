@@ -9,6 +9,48 @@ class Node:
     __slots__ = tuple()
 
 
+class Leaf(Node):
+    __slots__ = ('key', 'value')
+
+    def __init__(self, key=None, value=None):
+        self.key = key
+        self.value = value
+
+    @property
+    def is_empty(self):
+        return self.value is None
+
+    def __repr__(self):  # pragma: no coverage
+        repr_key = repr(self.key)
+
+        return indent(
+            repr(self.value),
+            '{}: '.format(repr_key),
+            '{}| '.format(' ' * len(repr_key)),
+        )
+
+
+class Extension(Node):
+    __slots__ = ('key', 'node')
+
+    def __init__(self, key=None, node=None):
+        self.key = key
+        self.node = node
+
+    @property
+    def is_empty(self):
+        return self.node is None
+
+    def __repr__(self):  # pragma: no coverage
+        repr_key = repr(self.key)
+
+        return indent(
+            repr(self.node),
+            '{}: '.format(repr_key),
+            '{}| '.format(' ' * len(repr_key)),
+        )
+
+
 class Branch(Node):
     __slots__ = ('nodes', 'value')
 
