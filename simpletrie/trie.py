@@ -104,7 +104,7 @@ class Narrow(metaclass=abc.ABCMeta):
         return self.key[:i]
 
     @abc.abstractmethod
-    def tail(self, i: int=1) -> Node:
+    def tail(self, i: int=1) -> Node:  # pragma: no coverage
         """
         Returns a new node with the same content as this node and excluding
         the initial ``i`` items in this node's key.
