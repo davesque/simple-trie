@@ -51,6 +51,9 @@ def test_node_is_empty(node, expected):
         (Leaf((), b'\x00'), True),
         (Leaf((0,), b'\x00'), False),
         (Leaf((0, 1), None), False),
+        (Extension((), None), True),
+        (Extension((0,), Branch()), False),
+        (Extension((0, 1), None), False),
     ),
 )
 def test_node_is_shallow(node, expected):

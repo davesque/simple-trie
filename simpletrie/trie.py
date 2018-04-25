@@ -140,6 +140,10 @@ class Extension(Node):
     def is_empty(self):
         return self.node is None
 
+    @property
+    def is_shallow(self):
+        return len(self.key) == 0
+
     def get(self, key):
         i = len(self.key)
         head, tail = key[:i], key[i:]
