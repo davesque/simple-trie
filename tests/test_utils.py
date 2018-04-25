@@ -8,6 +8,7 @@ from simpletrie.utils import (
     bytes_to_nibbles,
     hex_prefix,
     indent,
+    prefix_length,
     nibbles_to_bytes,
 )
 
@@ -130,3 +131,18 @@ bust
      bing
      bust
 """[1:-1]
+
+
+@pytest.mark.parametrize(
+    'l1, l2, expected',
+    (
+        ([], [], 0),
+        ([1], [], 0),
+        ([], [1], 0),
+        ([1, 2], [1, 3], 1),
+        ([1, 2, 3], [1, 2, 4], 2),
+        ('asdf', 'asdg', 3),
+    ),
+)
+def test_prefix_length(l1, l2, expected):
+    assert prefix_length(l1, l2) == expected

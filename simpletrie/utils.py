@@ -56,3 +56,16 @@ def indent(txt, prefix, rest_prefix=None):
             yield prefix + l
 
     return '\n'.join(_g())
+
+
+def prefix_length(x: Iterable, y: Iterable):
+    """
+    Determines the length of any common prefix shared by the iterables ``x``
+    and ``y``.
+    """
+    l = 0
+    for i, j in zip(x, y):
+        if i != j:
+            break
+        l += 1
+    return l
