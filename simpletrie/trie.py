@@ -35,6 +35,14 @@ class Node(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def delete(self, key):
+        """
+        Returns the result of deleting a key from this node.  Must return new
+        object.
+        """
+        pass
+
     def __add__(self, leaf: 'Leaf'):
         return self.insert(leaf)
 
@@ -44,6 +52,9 @@ class Node(abc.ABC):
         operation.  For example, ``None + leaf == leaf``.
         """
         return self
+
+    def __sub__(self, key):
+        return self.delete(key)
 
     def __eq__(self, other):
         return (
@@ -125,6 +136,12 @@ class Leaf(Node):
         # Nodes share no common prefix
         return Branch() + self + leaf
 
+    def delete(self, key):
+        if self.key == key:
+            return None
+
+        raise KeyError('Key not found')
+
     def __len__(self):
         return 0 if self.value is None else 1
 
@@ -202,6 +219,20 @@ class Extension(Node):
         # Nodes share no common prefix
         return Branch() + self + leaf
 
+    def delete(self, key):
+        i = len(self.key)
+        head, tail = key[:i], key[i:]
+
+        if self.key == head:
+            ext = type(self)(self.key, self.node.delete(tail))
+
+            if ext.is_empty:
+                return None
+
+            return ext
+
+        raise KeyError('Key not found')
+
     def __len__(self):
         return len(self.node)
 
@@ -270,6 +301,29 @@ class Branch(Node):
         branch[node.key[0]] += node.tail()
         return branch
 
+    def delete(self, key):
+        if len(key) == 0:
+            if self.value is None:
+                raise KeyError('Key not found')
+
+            branch = type(self)(self.nodes[:], None)
+            if branch.is_empty:
+                return None
+
+            return branch
+
+        head, tail = key[0], key[1:]
+        node = self.nodes[head]
+        if node is None:
+            raise KeyError('Key not found')
+
+        branch = type(self)(self.nodes[:], self.value)
+        branch[head] = node.delete(tail)
+        if branch.is_empty:
+            return None
+
+        return branch
+
     def __eq__(self, other):
         return (
             type(self) is type(other) and
@@ -332,7 +386,13 @@ class SimpleTrie:
         )
 
     def __delitem__(self, key):
-        self._root -= tuple(bytes_to_nibbles(key))
+        if self._root is None:
+            raise KeyError(repr(key))
+
+        try:
+            self._root -= tuple(bytes_to_nibbles(key))
+        except KeyError:
+            raise KeyError(repr(key))
 
     def __len__(self):
         if self._root is None:

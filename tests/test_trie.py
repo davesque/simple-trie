@@ -162,8 +162,8 @@ def test_simple_trie_properties(pairs):
         # Attempting to look up or delete non-existant key should cause error
         with pytest.raises(KeyError):
             t[key]
-        # with pytest.raises(KeyError, match='Key not found'):
-        #     del t[key]
+        with pytest.raises(KeyError):
+            del t[key]
 
         # Should be able to set a value for a key
         t[key] = value
@@ -174,18 +174,18 @@ def test_simple_trie_properties(pairs):
         # There should be i + 1 values in trie
         assert len(t) == i + 1
 
-    # for i, (key, value) in enumerate(pairs):
-    #     # Should be able to delete value at key
-    #     del t[key]
+    for i, (key, value) in enumerate(pairs):
+        # Should be able to delete value at key
+        del t[key]
 
-    #     # Attempting to look up or delete non-existant key should cause error
-    #     with pytest.raises(KeyError, match='Value not found'):
-    #         t[key]
-    #     with pytest.raises(KeyError, match='Value not found'):
-    #         del t[key]
+        # Attempting to look up or delete non-existant key should cause error
+        with pytest.raises(KeyError):
+            t[key]
+        with pytest.raises(KeyError):
+            del t[key]
 
-    #     # There should be one less value in trie after deletion
-    #     assert len(t) == len(pairs) - i - 1
+        # There should be one less value in trie after deletion
+        assert len(t) == len(pairs) - i - 1
 
     # Trie should be empty and contain only root node
-    # assert len(t) == 0
+    assert len(t) == 0
