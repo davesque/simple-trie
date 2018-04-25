@@ -1,5 +1,6 @@
 from .utils import (
     bytes_to_nibbles,
+    indent,
     nibbles_to_bytes,
 )
 
@@ -32,9 +33,8 @@ class Branch(Node):
             if n is None:
                 continue
 
-            prefix = '  {}: '.format(hex(i)[-1:])
-            repr_lines = repr(n).split('\n')
-            indented_repr = '\n'.join(prefix + l for l in repr_lines)
+            prefix = '  {}:'.format(hex(i)[-1:].upper())
+            indented_repr = indent(repr(n), prefix, '   |')
 
             node_reprs.append(indented_repr)
 
