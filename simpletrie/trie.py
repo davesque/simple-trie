@@ -65,6 +65,10 @@ class Leaf(Node):
     def is_empty(self):
         return self.value is None
 
+    @property
+    def is_shallow(self):
+        return len(self.key) == 0
+
     def head(self, i=1):
         """
         Returns the initial ``i`` items in this node's key.
@@ -87,15 +91,12 @@ class Leaf(Node):
     def insert(self, leaf: 'Leaf'):
         # Special cases
         if self.key == leaf.key:
-            # Leaves share same key or are both shallow (zero-length)
             return leaf
 
-        if len(self.key) == 0:
-            # Inserting deep leaf into shallow leaf
+        if self.is_shallow:
             return Branch(value=self.value) + leaf
 
-        if len(leaf.key) == 0:
-            # Inserting shallow leaf into deep leaf
+        if leaf.is_shallow:
             return Branch(value=leaf.value) + self
 
         # General case
