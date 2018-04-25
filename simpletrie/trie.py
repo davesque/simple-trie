@@ -73,24 +73,9 @@ class Node(abc.ABC):
         """
         pass
 
-    @abc.abstractmethod
-    def copy(self):
-        """
-        Creates a copy of this node.
-        """
-        pass
 
-
-class Leaf(Node):
-    __slots__ = ('key', 'value')
-
-    def __init__(self, key=None, value=None):
-        self.key = key
-        self.value = value
-
-    @property
-    def is_empty(self):
-        return self.value is None
+class Narrow(metaclass=abc.ABCMeta):
+    __slots__ = ('key',)
 
     @property
     def is_shallow(self):
@@ -101,6 +86,26 @@ class Leaf(Node):
         Returns the initial ``i`` items in this node's key.
         """
         return self.key[:i]
+
+    @abc.abstractmethod
+    def tail(self, i=1):
+        """
+        Returns a new node with the same content as this node and excluding
+        the initial ``i`` items in this node's key.
+        """
+        pass
+
+
+class Leaf(Narrow, Node):
+    __slots__ = ('value',)
+
+    def __init__(self, key=None, value=None):
+        self.key = key
+        self.value = value
+
+    @property
+    def is_empty(self):
+        return self.value is None
 
     def tail(self, i=1):
         """
@@ -158,8 +163,8 @@ class Leaf(Node):
         )
 
 
-class Extension(Node):
-    __slots__ = ('key', 'node')
+class Extension(Narrow, Node):
+    __slots__ = ('node',)
 
     def __init__(self, key=None, node=None):
         self.key = key
@@ -168,16 +173,6 @@ class Extension(Node):
     @property
     def is_empty(self):
         return self.node is None
-
-    @property
-    def is_shallow(self):
-        return len(self.key) == 0
-
-    def head(self, i=1):
-        """
-        Returns the initial ``i`` items in this node's key.
-        """
-        return self.key[:i]
 
     def tail(self, i=1):
         """
