@@ -98,16 +98,12 @@ class Leaf(Node):
             # Inserting shallow leaf into deep leaf
             return Branch(value=leaf.value) + self
 
-        # General cases
+        # General case
         l = prefix_length(self.key, leaf.key)
 
         if l > 0:
             # Nodes share common prefix
-            return Extension(
-                self.key[:l],
-                Leaf(self.key[l:], self.value) +
-                Leaf(leaf.key[l:], leaf.value),
-            )
+            return Extension(self.head(l), self.tail(l) + leaf.tail(l))
 
         # Nodes share no common prefix
         return Branch() + self + leaf
