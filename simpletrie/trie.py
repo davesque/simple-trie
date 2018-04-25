@@ -77,8 +77,8 @@ class Branch(Node):
 
             indented = indent(
                 repr(n),
-                '  {}:'.format(hex(i)[-1:].upper()),
-                '   |',
+                '{}: '.format(hex(i)[-1:].upper()),
+                ' | ',
             )
 
             node_reprs.append(indented)
