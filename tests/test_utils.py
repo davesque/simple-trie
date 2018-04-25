@@ -6,8 +6,9 @@ import pytest
 
 from simpletrie.utils import (
     bytes_to_nibbles,
-    nibbles_to_bytes,
     hex_prefix,
+    indent,
+    nibbles_to_bytes,
 )
 
 
@@ -79,3 +80,53 @@ def test_hex_prefix(nibble_list):
 
         assert nibbles_with_flag[1:] == nibble_list
         assert nibbles_without_flag[1:] == nibble_list
+
+
+def test_indent():
+    short_txt = """
+foo
+"""[1:-1]
+
+    med_txt = """
+foo
+bar
+"""[1:-1]
+
+    long_txt = """
+foo
+bar
+baz
+bing
+bust
+"""[1:-1]
+
+    assert indent(short_txt, '  1. ') == """
+  1. foo
+"""[1:-1]
+    assert indent(short_txt, '  1. ', '     ') == """
+  1. foo
+"""[1:-1]
+
+    assert indent(med_txt, '  1. ') == """
+  1. foo
+  1. bar
+"""[1:-1]
+    assert indent(med_txt, '  1. ', '     ') == """
+  1. foo
+     bar
+"""[1:-1]
+
+    assert indent(long_txt, '  1. ') == """
+  1. foo
+  1. bar
+  1. baz
+  1. bing
+  1. bust
+"""[1:-1]
+    assert indent(long_txt, '  1. ', '     ') == """
+  1. foo
+     bar
+     baz
+     bing
+     bust
+"""[1:-1]

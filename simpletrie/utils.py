@@ -40,3 +40,19 @@ def hex_prefix(xs: SizedNibbles, t: bool) -> Bytes:
         return nibbles_to_bytes(chain((flags, 0), xs))
 
     return nibbles_to_bytes(chain((flags + 1,), xs))
+
+
+def indent(txt, prefix, rest_prefix=None):
+    def _g():
+        nonlocal prefix
+
+        lines = iter(txt.split('\n'))
+
+        if rest_prefix is not None:
+            yield prefix + next(lines)
+            prefix = rest_prefix
+
+        for l in lines:
+            yield prefix + l
+
+    return '\n'.join(_g())
