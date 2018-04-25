@@ -10,12 +10,20 @@ from typing import (
 
 
 def bytes_to_nibbles(xs: Union[bytes, BytesIO]) -> Iterator[int]:
+    """
+    Converts an iterable of bytes into an iterable of nibbles contained in
+    those bytes.
+    """
     for x in xs:
         yield x // 16
         yield x % 16
 
 
 def nibbles_to_bytes(xs: Iterable[int]) -> Iterator[bytes]:
+    """
+    Converts an iterable of nibbles (containing an even number of nibbles) into
+    an iterable of bytes composed of those nibbles.
+    """
     odd, even = True, False
     b = 0
 
@@ -33,6 +41,11 @@ def nibbles_to_bytes(xs: Iterable[int]) -> Iterator[bytes]:
 
 
 def hex_prefix(xs: Sequence[int], t: bool) -> Iterator[bytes]:
+    """
+    Converts a sequence of nibbles into its appropriate hex prefix
+    representation.  If ``t`` is true, the resulting representation indicates
+    that the encoded trie node is terminal.
+    """
     flags = 2 if t else 0
 
     if len(xs) % 2 == 0:
@@ -42,6 +55,11 @@ def hex_prefix(xs: Sequence[int], t: bool) -> Iterator[bytes]:
 
 
 def indent(txt: str, prefix: str, rest_prefix: Optional[str]=None) -> str:
+    """
+    Indents string ``txt`` with the string ``prefix``.  If ``rest_prefix``
+    prefix is given, indents all lines in ``txt`` after the first with
+    ``rest_prefix``.
+    """
     def _g() -> Iterator[str]:
         nonlocal prefix
 
