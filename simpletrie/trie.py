@@ -15,7 +15,7 @@ class Node(abc.ABC):
     def is_empty(self):
         """
         Returns a boolean value that indicates if this node can be safely
-        deleted.
+        discarded.
         """
         pass
 

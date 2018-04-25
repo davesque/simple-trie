@@ -26,28 +26,35 @@ def test_node_radd(node):
 
 
 @pytest.mark.parametrize(
-    'leaf, expected',
+    'node, expected',
     (
         (Leaf((), b'\x00'), False),
         (Leaf((), None), True),
         (Leaf((0,), b'\x00'), False),
         (Leaf((0, 1), None), True),
+        (Extension((), None), True),
+        (Extension((1,), None), True),
+        (Extension((), Branch()), False),
+        (Extension((1,), Branch()), False),
+        (Branch(), True),
+        (Branch() + Leaf((1,), b'\x00'), False),
+        (Branch(value=b'\x00'), False),
     ),
 )
-def test_leaf_is_empty(leaf, expected):
-    assert leaf.is_empty is expected
+def test_node_is_empty(node, expected):
+    assert node.is_empty is expected
 
 
 @pytest.mark.parametrize(
-    'leaf, expected',
+    'node, expected',
     (
         (Leaf((), b'\x00'), True),
         (Leaf((0,), b'\x00'), False),
         (Leaf((0, 1), None), False),
     ),
 )
-def test_leaf_is_shallow(leaf, expected):
-    assert leaf.is_shallow is expected
+def test_node_is_shallow(node, expected):
+    assert node.is_shallow is expected
 
 
 @pytest.mark.parametrize(
