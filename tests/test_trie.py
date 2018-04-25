@@ -42,6 +42,31 @@ def test_leaf_insert():
 
 
 @pytest.mark.parametrize(
+    'leaf, expected',
+    (
+        (Leaf((), b'\x00'), False),
+        (Leaf((), None), True),
+        (Leaf((0,), b'\x00'), False),
+        (Leaf((0, 1), None), True),
+    ),
+)
+def test_leaf_is_empty(leaf, expected):
+    assert leaf.is_empty is expected
+
+
+@pytest.mark.parametrize(
+    'leaf, expected',
+    (
+        (Leaf((), b'\x00'), True),
+        (Leaf((0,), b'\x00'), False),
+        (Leaf((0, 1), None), False),
+    ),
+)
+def test_leaf_is_shallow(leaf, expected):
+    assert leaf.is_shallow is expected
+
+
+@pytest.mark.parametrize(
     'leaf, i, head',
     (
         (Leaf((10, 11, 12), b'\x00'), None, (10,)),
