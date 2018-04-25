@@ -1,6 +1,7 @@
 from typing import (
     Any,
     List,
+    Optional,
     Union,
     Tuple,
 )
@@ -21,7 +22,7 @@ class Node(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def is_empty(self):  # pragma: no coverage
+    def is_empty(self) -> bool:  # pragma: no coverage
         """
         Returns a boolean value that indicates if this node can be safely
         discarded.
@@ -29,14 +30,14 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def get(self, key: Nibbles):  # pragma: no coverage
+    def get(self, key: Nibbles) -> bytes:  # pragma: no coverage
         """
         Returns any value mapped to by ``key`` in this node.
         """
         pass
 
     @abc.abstractmethod
-    def insert(self, node: 'Node'):  # pragma: no coverage
+    def insert(self, node: 'Node') -> 'Node':  # pragma: no coverage
         """
         Returns the result of inserting a node into this node.  Must return new
         object.
@@ -44,7 +45,7 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def delete(self, key: Nibbles):  # pragma: no coverage
+    def delete(self, key: Nibbles) -> Optional['Node']:  # pragma: no coverage
         """
         Returns the result of deleting a key from this node.  Must return new
         object.
@@ -52,7 +53,7 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def __len__(self):  # pragma: no coverage
+    def __len__(self) -> int:  # pragma: no coverage
         """
         Returns the number of values which are stored under this node and any
         of its children.
@@ -60,26 +61,26 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def copy(self):  # pragma: no coverage
+    def copy(self) -> 'Node':  # pragma: no coverage
         """
         Creates a copy of this node.
         """
         pass
 
-    def __add__(self, node: 'Node'):
+    def __add__(self, node: 'Node') -> 'Node':
         return self.insert(node)
 
-    def __radd__(self, other: Any):
+    def __radd__(self, other: Any) -> 'Node':
         """
         Nodes should overwrite values which do not define an addition
         operation.  For example, ``None + leaf == leaf``.
         """
         return self
 
-    def __sub__(self, key: Nibbles):
+    def __sub__(self, key: Nibbles) -> 'Node':
         return self.delete(key)
 
-    def __eq__(self, node: 'Node'):
+    def __eq__(self, node: 'Node') -> bool:
         return (
             type(self) is type(node) and
             all(
@@ -93,17 +94,17 @@ class Narrow(metaclass=abc.ABCMeta):
     __slots__ = ('key',)
 
     @property
-    def is_shallow(self):
+    def is_shallow(self) -> bool:
         return len(self.key) == 0
 
-    def head(self, i: int=1):
+    def head(self, i: int=1) -> Nibbles:
         """
         Returns the initial ``i`` items in this node's key.
         """
         return self.key[:i]
 
     @abc.abstractmethod
-    def tail(self, i: int=1):
+    def tail(self, i: int=1) -> Node:
         """
         Returns a new node with the same content as this node and excluding
         the initial ``i`` items in this node's key.
@@ -114,28 +115,28 @@ class Narrow(metaclass=abc.ABCMeta):
 class Leaf(Narrow, Node):
     __slots__ = ('value',)
 
-    def __init__(self, key: Nibbles=None, value: bytes=None):
+    def __init__(self, key: Nibbles=None, value: bytes=None) -> None:
         self.key = key
         self.value = value
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return self.value is None
 
-    def tail(self, i: int=1):
+    def tail(self, i: int=1) -> 'Leaf':
         """
         Returns a new leaf node with the same value as this node and excluding
         the initial ``i`` items in this node's key.
         """
         return type(self)(self.key[i:], self.value)
 
-    def get(self, key: Nibbles):
+    def get(self, key: Nibbles) -> bytes:
         if self.key == key:
             return self.value
 
         raise KeyError('Key not found')
 
-    def insert(self, leaf: 'Leaf'):
+    def insert(self, leaf: 'Leaf') -> Node:
         # Special cases
         if self.key == leaf.key:
             return leaf
@@ -156,19 +157,19 @@ class Leaf(Narrow, Node):
         # Nodes share no common prefix
         return Branch() + self + leaf
 
-    def delete(self, key: Nibbles):
+    def delete(self, key: Nibbles) -> None:
         if self.key == key:
             return None
 
         raise KeyError('Key not found')
 
-    def __len__(self):
+    def __len__(self) -> int:
         return 0 if self.value is None else 1
 
-    def copy(self):
+    def copy(self) -> 'Leaf':
         return type(self)(self.key, self.value)
 
-    def __repr__(self):  # pragma: no coverage
+    def __repr__(self) -> str:  # pragma: no coverage
         repr_key = repr(self.key)
 
         return indent(
@@ -181,15 +182,15 @@ class Leaf(Narrow, Node):
 class Extension(Narrow, Node):
     __slots__ = ('node',)
 
-    def __init__(self, key: Nibbles=None, node: Union['Leaf', 'Branch']=None):
+    def __init__(self, key: Nibbles=None, node: Union['Leaf', 'Branch']=None) -> None:
         self.key = key
         self.node = node
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return self.node is None
 
-    def tail(self, i: int=1):
+    def tail(self, i: int=1) -> Node:
         """
         Returns a new extension node with the same referent node as this node
         and excluding the initial ``i`` items in this node's key.  If the
@@ -202,7 +203,7 @@ class Extension(Narrow, Node):
 
         return tl
 
-    def get(self, key: Nibbles):
+    def get(self, key: Nibbles) -> bytes:
         i = len(self.key)
         head, tail = key[:i], key[i:]
 
@@ -211,7 +212,7 @@ class Extension(Narrow, Node):
 
         raise KeyError('Key not found')
 
-    def insert(self, leaf: Leaf):
+    def insert(self, leaf: Leaf) -> Node:
         # Special cases
         if self.is_shallow:
             return self.node + leaf
@@ -229,7 +230,7 @@ class Extension(Narrow, Node):
         # Nodes share no common prefix
         return Branch() + self + leaf
 
-    def delete(self, key: Nibbles):
+    def delete(self, key: Nibbles) -> Optional['Extension']:
         i = len(self.key)
         head, tail = key[:i], key[i:]
 
@@ -243,13 +244,13 @@ class Extension(Narrow, Node):
 
         raise KeyError('Key not found')
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.node)
 
-    def copy(self):
+    def copy(self) -> 'Extension':
         return type(self)(self.key, self.node.copy())
 
-    def __repr__(self):  # pragma: no coverage
+    def __repr__(self) -> str:  # pragma: no coverage
         repr_key = repr(self.key)
 
         return indent(
@@ -262,7 +263,7 @@ class Extension(Narrow, Node):
 class Branch(Node):
     __slots__ = ('nodes', 'value')
 
-    def __init__(self, nodes: List[Node]=None, value: bytes=None):
+    def __init__(self, nodes: List[Node]=None, value: bytes=None) -> None:
         if nodes is None:
             self.nodes = [None] * 16
         else:
@@ -270,17 +271,17 @@ class Branch(Node):
 
         self.value = value
 
-    def __getitem__(self, key: int):
+    def __getitem__(self, key: int) -> Node:
         return self.nodes[key]
 
-    def __setitem__(self, key: int, value: bytes):
+    def __setitem__(self, key: int, value: bytes) -> None:
         self.nodes[key] = value
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return all(n is None for n in self.nodes) and self.value is None
 
-    def get(self, key: Nibbles):
+    def get(self, key: Nibbles) -> bytes:
         if len(key) == 0:
             if self.value is None:
                 raise KeyError('Key not found')
@@ -294,7 +295,7 @@ class Branch(Node):
 
         raise KeyError('Key not found')
 
-    def insert(self, node: Union[Leaf, Extension]):
+    def insert(self, node: Union[Leaf, Extension]) -> 'Branch':
         """
         Inserts a leaf or extension node into a branch node.
         """
@@ -311,7 +312,7 @@ class Branch(Node):
         branch[node.key[0]] += node.tail()
         return branch
 
-    def delete(self, key: Nibbles):
+    def delete(self, key: Nibbles) -> Optional['Branch']:
         if len(key) == 0:
             if self.value is None:
                 raise KeyError('Key not found')
@@ -334,26 +335,26 @@ class Branch(Node):
 
         return branch
 
-    def __eq__(self, other: 'Branch'):
+    def __eq__(self, other: 'Branch') -> bool:
         return (
             type(self) is type(other) and
             self.value == other.value and
             all(n1 == n2 for n1, n2 in zip(self.nodes, other.nodes))
         )
 
-    def __len__(self):
+    def __len__(self) -> int:
         return (
             (0 if self.value is None else 1) +
             sum(len(n) if n is not None else 0 for n in self.nodes)
         )
 
-    def copy(self):
+    def copy(self) -> 'Branch':
         return type(self)(
             [n.copy() if n is not None else n for n in self.nodes],
             self.value,
         )
 
-    def __repr__(self):  # pragma: no coverage
+    def __repr__(self) -> str:  # pragma: no coverage
         node_reprs = []
 
         for i, n in enumerate(self.nodes):
@@ -377,7 +378,7 @@ class Branch(Node):
 class SimpleTrie:
     __slots__ = ('_root',)
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._root = None
 
     def __getitem__(self, key: bytes) -> bytes:
