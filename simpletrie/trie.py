@@ -1,3 +1,4 @@
+from typing import Union
 import abc
 
 from .utils import (
@@ -144,6 +145,12 @@ class Extension(Node):
     def is_shallow(self):
         return len(self.key) == 0
 
+    def head(self, i=1):
+        """
+        Returns the initial ``i`` items in this node's key.
+        """
+        return self.key[:i]
+
     def tail(self, i=1):
         """
         Returns a new extension node with the same referent node as this node
@@ -166,54 +173,23 @@ class Extension(Node):
 
         raise KeyError('Key not found')
 
-    def insert(self, other):
+    def insert(self, leaf):
         # Special cases
+        if self.is_shallow:
+            return self.node + leaf
 
-        len_self = len(self.key)
-
-        if self.key == other.key:
-            # Nodes share same key
-            return self.node + Leaf((), other.value)
-
-        if len_self == 0:
-            # Self is zero-length
-            return self.node + other
-
-        if len(other.key) == 0:
-            # Inserting zero-length leaf
-            branch = Branch(value=other.value)
-            if len_self == 1:
-                branch[self.key[0]] = self.node
-            else:
-                branch[self.key[0]] = Extension(self.key[:1], self.node)
-
-            return branch
+        if leaf.is_shallow:
+            return Branch(value=leaf.value) + self
 
         # General cases
+        l = prefix_length(self.key, leaf.key)
 
-        # Determine length of common prefix
-        i = 0
-        for k1, k2 in zip(self.key, other.key):
-            if k1 != k2:
-                break
-            i += 1
-
-        if i > 0:
+        if l > 0:
             # Nodes share common prefix
-            return Extension(
-                self.key[:i],
-                Extension(self.key[i:], self.node) + Leaf(other.key[i:], other.value),
-            )
+            return Extension(self.head(l), self.tail(l) + leaf.tail(l))
 
         # Nodes share no common prefix
-        branch = Branch()
-        if len_self == 1:
-            branch[self.key[0]] = self.node
-        else:
-            branch[self.key[0]] = Extension(self.key[i:], self.node)
-        branch[other.key[0]] = Leaf(other.key[1:], other.value)
-
-        return branch
+        return Branch() + self + leaf
 
     def copy(self):
         return type(self)(self.key, self.node.copy())
@@ -260,19 +236,22 @@ class Branch(Node):
 
         raise KeyError('Key not found')
 
-    def insert(self, leaf: 'Leaf'):
+    def insert(self, node: Union[Leaf, Extension]):
         """
-        Inserts a leaf node into a branch node.  Permits side-effects for the
-        sake of efficiency.
+        Inserts a leaf or extension node into a branch node.
         """
-        if len(leaf.key) == 0:
-            # Inserting shallow leaf into branch
-            self.value = leaf.value
-            return self
+        if node.is_shallow:
+            if isinstance(node, Extension):
+                raise ValueError('Cannot insert shallow extension into branch')
 
-        # Inserting deep leaf into branch
-        self[leaf.key[0]] += leaf.tail()
-        return self
+            # Insert shallow leaf into branch
+            branch = type(self)(self.nodes[:], node.value)
+            return branch
+
+        # Insert deep node into branch
+        branch = type(self)(self.nodes[:], self.value)
+        branch[node.key[0]] += node.tail()
+        return branch
 
     def __eq__(self, other):
         return (

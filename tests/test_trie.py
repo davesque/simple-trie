@@ -132,23 +132,13 @@ def test_extension_insert():
     branch = Branch()
     branch[10] = Leaf((), b'\x00')
     branch[11] = Leaf((), b'\x01')
+    leaf = Leaf((10,), b'\x02')
 
-    actual = Extension((10,), branch) + Leaf((10,), b'\x02')
-
-    expected = branch.copy()
-    expected.value = b'\x02'
-
-    assert actual == expected
-
-    # Extension has zero-length key
-    branch = Branch()
-    branch[10] = Leaf((), b'\x00')
-    branch[11] = Leaf((), b'\x01')
-
-    actual = Extension((), branch) + Leaf((10,), b'\x02')
-
-    expected = branch.copy()
-    expected[10] = Leaf((), b'\x02')
+    actual = Extension((10,), branch) + leaf
+    expected = Extension(
+        (10,),
+        branch + leaf.tail(),
+    )
 
     assert actual == expected
 
