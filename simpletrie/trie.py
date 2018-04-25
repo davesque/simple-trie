@@ -1,3 +1,5 @@
+import abc
+
 from .utils import (
     bytes_to_nibbles,
     indent,
@@ -5,8 +7,37 @@ from .utils import (
 )
 
 
-class Node:
+class Node(abc.ABC):
     __slots__ = tuple()
+
+    @property
+    @abc.abstractmethod
+    def is_empty(self):
+        """
+        Returns a boolean value that indicates if this node can be safely
+        deleted.
+        """
+        pass
+
+    @abc.abstractmethod
+    def insert(self, other):
+        """
+        Returns the result of inserting a node into this node.  Must
+        return new object.
+        """
+        pass
+
+    def __add__(self, other):
+        return self.insert(other)
+
+    def __eq__(self, other):
+        return (
+            type(self) is type(other) and
+            all(
+                getattr(self, a) == getattr(other, a)
+                for a in self.__slots__
+            )
+        )
 
 
 class Leaf(Node):
@@ -19,6 +50,49 @@ class Leaf(Node):
     @property
     def is_empty(self):
         return self.value is None
+
+    def insert(self, other):
+        # Special cases
+
+        if self.key == other.key:
+            # Nodes share same key or are both zero-length
+            return other
+
+        if len(self.key) == 0:
+            # Inserting non-zero leaf into zero-length leaf
+            branch = Branch(value=self.value)
+            branch[other.key[0]] = Leaf(other.key[1:], other.value)
+
+            return branch
+
+        if len(other.key) == 0:
+            # Inserting zero-length leaf into non-zero leaf
+            branch = Branch(value=other.value)
+            branch[self.key[0]] = Leaf(self.key[1:], self.value)
+
+            return branch
+
+        # General cases
+
+        # Determine length of common prefix
+        for i, (k1, k2) in enumerate(zip(self.key, other.key)):
+            if k1 != k2:
+                break
+
+        if i > 0:
+            # Nodes share common prefix
+            return Extension(
+                self.key[:i],
+                Leaf(self.key[i:], self.value) +
+                Leaf(other.key[i:], other.value)
+            )
+
+        # Nodes share no common prefix
+        branch = Branch()
+        branch[self.key[0]] = Leaf(self.key[1:], self.value)
+        branch[other.key[0]] = Leaf(other.key[1:], other.value)
+
+        return branch
 
     def __repr__(self):  # pragma: no coverage
         repr_key = repr(self.key)
@@ -55,7 +129,11 @@ class Branch(Node):
     __slots__ = ('nodes', 'value')
 
     def __init__(self, nodes=None, value=None):
-        self.nodes = [None] * 16
+        if nodes is None:
+            self.nodes = [None] * 16
+        else:
+            self.nodes = nodes
+
         self.value = value
 
     def __getitem__(self, key):
@@ -67,6 +145,9 @@ class Branch(Node):
     @property
     def is_empty(self):
         return all(n is None for n in self.nodes) and self.value is None
+
+    def insert(self, other):
+        return other
 
     def __repr__(self):  # pragma: no coverage
         node_reprs = []
@@ -87,6 +168,13 @@ class Branch(Node):
             return '{} (\n{}\n)'.format(repr(self.value), '\n'.join(node_reprs))
 
         return repr(self.value)
+
+    def __eq__(self, other):
+        return (
+            type(self) is type(other) and
+            self.value == other.value and
+            all(n1 == n2 for n1, n2 in zip(self.nodes, other.nodes))
+        )
 
 
 class SimpleTrie:
