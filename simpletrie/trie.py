@@ -112,6 +112,13 @@ class Leaf(Node):
     def copy(self):
         return type(self)(self.key, self.value)
 
+    def __radd__(self, other):
+        """
+        Leaf nodes should overwrite values which do not define an addition
+        operation.  For example, ``None + leaf == leaf``.
+        """
+        return self
+
     def __repr__(self):  # pragma: no coverage
         repr_key = repr(self.key)
 

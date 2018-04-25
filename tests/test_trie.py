@@ -72,6 +72,10 @@ def test_leaf_tail(leaf, i, tail):
         assert leaf.tail(i) == tail
 
 
+def test_leaf_radd():
+    assert None + Leaf((), b'\x00') == Leaf((), b'\x00')
+
+
 def test_leaf_insert():
     # Leaves have same key
     assert Leaf((10,), b'\x00') + Leaf((10,), b'\x01') == Leaf((10,), b'\x01')
