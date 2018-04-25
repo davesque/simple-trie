@@ -39,6 +39,13 @@ class Node(abc.ABC):
             )
         )
 
+    @abc.abstractmethod
+    def copy(self):
+        """
+        Creates a copy of this node.
+        """
+        pass
+
 
 class Leaf(Node):
     __slots__ = ('key', 'value')
@@ -94,6 +101,9 @@ class Leaf(Node):
 
         return branch
 
+    def copy(self):
+        return type(self)(self.key, self.value)
+
     def __repr__(self):  # pragma: no coverage
         repr_key = repr(self.key)
 
@@ -114,6 +124,9 @@ class Extension(Node):
     @property
     def is_empty(self):
         return self.node is None
+
+    def copy(self):
+        return type(self)(self.key, self.node.copy())
 
     def __repr__(self):  # pragma: no coverage
         repr_key = repr(self.key)
@@ -148,6 +161,12 @@ class Branch(Node):
 
     def insert(self, other):
         return other
+
+    def copy(self):
+        return type(self)(
+            [n.copy() if n is not None else n for n in self.nodes],
+            self.value,
+        )
 
     def __repr__(self):  # pragma: no coverage
         node_reprs = []
