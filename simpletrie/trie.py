@@ -75,10 +75,13 @@ class Branch(Node):
             if n is None:
                 continue
 
-            prefix = '  {}:'.format(hex(i)[-1:].upper())
-            indented_repr = indent(repr(n), prefix, '   |')
+            indented = indent(
+                repr(n),
+                '  {}:'.format(hex(i)[-1:].upper()),
+                '   |',
+            )
 
-            node_reprs.append(indented_repr)
+            node_reprs.append(indented)
 
         if node_reprs:
             return '{} (\n{}\n)'.format(repr(self.value), '\n'.join(node_reprs))
