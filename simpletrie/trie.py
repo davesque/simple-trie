@@ -3,6 +3,7 @@ import abc
 from .utils import (
     bytes_to_nibbles,
     indent,
+    prefix_length,
 )
 
 
@@ -26,15 +27,15 @@ class Node(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def insert(self, other):
+    def insert(self, leaf: 'Leaf'):
         """
-        Returns the result of inserting a node into this node.  Must
-        return new object.
+        Returns the result of inserting a leaf into this node.  Must return new
+        object.
         """
         pass
 
-    def __add__(self, other):
-        return self.insert(other)
+    def __add__(self, leaf: 'Leaf'):
+        return self.insert(leaf)
 
     def __eq__(self, other):
         return (
@@ -70,50 +71,33 @@ class Leaf(Node):
 
         raise KeyError('Key not found')
 
-    def insert(self, other):
+    def insert(self, leaf: 'Leaf'):
         # Special cases
-
-        if self.key == other.key:
-            # Nodes share same key or are both zero-length
-            return other
+        if self.key == leaf.key:
+            # Leaves share same key or are both shallow (zero-length)
+            return leaf
 
         if len(self.key) == 0:
-            # Inserting non-zero leaf into zero-length leaf
-            branch = Branch(value=self.value)
-            branch[other.key[0]] = Leaf(other.key[1:], other.value)
+            # Inserting deep leaf into shallow leaf
+            return Branch(value=self.value) + leaf
 
-            return branch
-
-        if len(other.key) == 0:
-            # Inserting zero-length leaf into non-zero leaf
-            branch = Branch(value=other.value)
-            branch[self.key[0]] = Leaf(self.key[1:], self.value)
-
-            return branch
+        if len(leaf.key) == 0:
+            # Inserting shallow leaf into deep leaf
+            return Branch(value=leaf.value) + self
 
         # General cases
+        l = prefix_length(self.key, leaf.key)
 
-        # Determine length of common prefix
-        i = 0
-        for k1, k2 in zip(self.key, other.key):
-            if k1 != k2:
-                break
-            i += 1
-
-        if i > 0:
+        if l > 0:
             # Nodes share common prefix
             return Extension(
-                self.key[:i],
-                Leaf(self.key[i:], self.value) +
-                Leaf(other.key[i:], other.value)
+                self.key[:l],
+                Leaf(self.key[l:], self.value) +
+                Leaf(leaf.key[l:], leaf.value),
             )
 
         # Nodes share no common prefix
-        branch = Branch()
-        branch[self.key[0]] = Leaf(self.key[1:], self.value)
-        branch[other.key[0]] = Leaf(other.key[1:], other.value)
-
-        return branch
+        return Branch() + self + leaf
 
     def copy(self):
         return type(self)(self.key, self.value)
