@@ -28,9 +28,9 @@ class Node(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def insert(self, leaf: 'Leaf'):
+    def insert(self, node: 'Node'):
         """
-        Returns the result of inserting a leaf into this node.  Must return new
+        Returns the result of inserting a node into this node.  Must return new
         object.
         """
         pass
