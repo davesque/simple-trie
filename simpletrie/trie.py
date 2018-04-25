@@ -3,7 +3,6 @@ import abc
 from .utils import (
     bytes_to_nibbles,
     indent,
-    nibbles_to_bytes,
 )
 
 
@@ -16,6 +15,13 @@ class Node(abc.ABC):
         """
         Returns a boolean value that indicates if this node can be safely
         deleted.
+        """
+        pass
+
+    @abc.abstractmethod
+    def get(self, key):
+        """
+        Returns any value mapped to by ``key`` in this node.
         """
         pass
 
@@ -57,6 +63,12 @@ class Leaf(Node):
     @property
     def is_empty(self):
         return self.value is None
+
+    def get(self, key):
+        if self.key == key:
+            return self.value
+
+        raise KeyError('Key not found')
 
     def insert(self, other):
         # Special cases
@@ -126,6 +138,15 @@ class Extension(Node):
     @property
     def is_empty(self):
         return self.node is None
+
+    def get(self, key):
+        i = len(self.key)
+        head, tail = key[:i], key[i:]
+
+        if self.key == head:
+            return self.node.get(tail)
+
+        raise KeyError('Key not found')
 
     def insert(self, other):
         # Special cases
@@ -210,6 +231,17 @@ class Branch(Node):
     def is_empty(self):
         return all(n is None for n in self.nodes) and self.value is None
 
+    def get(self, key):
+        if len(key) == 0:
+            return self.value
+
+        head, tail = key[0], key[1:]
+        curr = self.nodes[head]
+        if curr is not None:
+            return curr.get(tail)
+
+        raise KeyError('Key not found')
+
     def insert(self, other):
         branch = Branch(self.nodes[:], self.value)
 
@@ -267,91 +299,8 @@ class SimpleTrie:
     def __init__(self):
         self._root = Leaf((), None)
 
-    def _get(self, node, key, i):
-        """
-        Under ``node``, get the value keyed by the nibble array ``key[i:]``.
-        """
-        try:
-            nib = key[i]
-        except IndexError:
-            if node.value is None:
-                raise KeyError('Value not found for key {}'.format(
-                    repr(b''.join(nibbles_to_bytes(key))),
-                ))
-            return node.value
-
-        node_ = node[nib]
-        if node_ is None:
-            raise KeyError('Value not found for key {}'.format(
-                repr(b''.join(nibbles_to_bytes(key))),
-            ))
-
-        return self._get(node_, key, i + 1)
-
-    def _set(self, node, key, i, value):
-        """
-        Under ``node``, store ``value`` keyed by the nibble array ``key[i:]``.
-        """
-        try:
-            nib = key[i]
-        except IndexError:
-            node.value = value
-            return
-
-        node_ = node[nib]
-        if node_ is None:
-            node_ = Branch()
-            node[nib] = node_
-
-        self._set(node_, key, i + 1, value)
-
-    def _del(self, node, key, i):
-        """
-        Under ``node``, delete the value keyed by the nibble array ``key[i:]``.
-        """
-        try:
-            nib = key[i]
-        except IndexError:
-            if node.value is None:
-                raise KeyError('Value not found for key {}'.format(
-                    repr(b''.join(nibbles_to_bytes(key))),
-                ))
-            node.value = None
-            return
-
-        node_ = node[nib]
-        if node_ is None:
-            raise KeyError('Value not found for key {}'.format(
-                repr(b''.join(nibbles_to_bytes(key))),
-            ))
-
-        self._del(node_, key, i + 1)
-        if node_.is_empty:
-            node[nib] = None
-
-    def _len(self, node):
-        """
-        Returns the number of nodes under ``node`` in which a value is stored.
-        """
-        if node is None:
-            return 0
-
-        if node.value is not None:
-            return 1 + sum(self._len(n) for n in node.nodes)
-
-        return sum(self._len(n) for n in node.nodes)
-
-    def _size(self, node):
-        """
-        Returns the number of nodes under ``node``.
-        """
-        if node is None:
-            return 0
-
-        return 1 + sum(self._len(n) for n in node.nodes)
-
     def __getitem__(self, key):
-        return self._get(self._root, tuple(bytes_to_nibbles(key)), 0)
+        return self._root.get(tuple(bytes_to_nibbles(key)))
 
     def __setitem__(self, key, value):
         self._root += Leaf(
@@ -360,14 +309,10 @@ class SimpleTrie:
         )
 
     def __delitem__(self, key):
-        self._del(self._root, tuple(bytes_to_nibbles(key)), 0)
+        self._root -= tuple(bytes_to_nibbles(key))
 
     def __len__(self):
-        return self._len(self._root)
-
-    @property
-    def size(self):
-        return self._size(self._root)
+        return len(self._root)
 
     def __repr__(self):  # pragma: no coverage
         return repr(self._root)
