@@ -41,6 +41,32 @@ def test_leaf_insert():
     )
 
 
+def test_extension_insert():
+    # Nodes have same key
+    branch = Branch()
+    branch[10] = Leaf((), b'\x00')
+    branch[11] = Leaf((), b'\x01')
+
+    actual = Extension((10,), branch) + Leaf((10,), b'\x02')
+
+    expected = branch.copy()
+    expected.value = b'\x02'
+
+    assert actual == expected
+
+    # Extension has zero-length key
+    branch = Branch()
+    branch[10] = Leaf((), b'\x00')
+    branch[11] = Leaf((), b'\x01')
+
+    actual = Extension((), branch) + Leaf((10,), b'\x02')
+
+    expected = branch.copy()
+    expected[10] = Leaf((), b'\x02')
+
+    assert actual == expected
+
+
 key_value_pairs = st.tuples(st.binary(max_size=100), st.binary())
 
 
