@@ -14,6 +14,18 @@ from simpletrie.trie import (
 
 
 @pytest.mark.parametrize(
+    'node',
+    (
+        Leaf((), None),
+        Extension((), None),
+        Branch(),
+    ),
+)
+def test_node_radd(node):
+    assert None + node == node
+
+
+@pytest.mark.parametrize(
     'leaf, expected',
     (
         (Leaf((), b'\x00'), False),
@@ -70,10 +82,6 @@ def test_leaf_tail(leaf, i, tail):
         assert leaf.tail() == tail
     else:
         assert leaf.tail(i) == tail
-
-
-def test_leaf_radd():
-    assert None + Leaf((), b'\x00') == Leaf((), b'\x00')
 
 
 def test_leaf_insert():
