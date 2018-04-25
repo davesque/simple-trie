@@ -4,11 +4,12 @@ from setuptools import (
 )
 
 
-extras_require={
+extras_require = {
     'dev': [
         'pytest',
         'hypothesis',
         'ipython',
+        'ipdb',
     ],
 }
 
