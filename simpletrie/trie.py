@@ -243,22 +243,19 @@ class Branch(Node):
 
         raise KeyError('Key not found')
 
-    def insert(self, other):
-        branch = Branch(self.nodes[:], self.value)
+    def insert(self, leaf: 'Leaf'):
+        """
+        Inserts a leaf node into a branch node.  Permits side-effects for the
+        sake of efficiency.
+        """
+        if len(leaf.key) == 0:
+            # Inserting shallow leaf into branch
+            self.value = leaf.value
+            return self
 
-        if len(other.key) == 0:
-            branch.value = other.value
-            return branch
-
-        head, tail = other.key[0], other.key[1:]
-        curr = branch[head]
-
-        if curr is None:
-            branch[head] = Leaf(tail, other.value)
-        else:
-            branch[head] = curr + Leaf(tail, other.value)
-
-        return branch
+        # Inserting deep leaf into branch
+        self[leaf.key[0]] += leaf.tail()
+        return self
 
     def __eq__(self, other):
         return (
