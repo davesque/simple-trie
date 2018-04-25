@@ -55,6 +55,14 @@ class Node(abc.ABC):
         )
 
     @abc.abstractmethod
+    def __len__(self):
+        """
+        Returns the number of values which are stored under this node and any
+        of its children.
+        """
+        pass
+
+    @abc.abstractmethod
     def copy(self):
         """
         Creates a copy of this node.
@@ -116,6 +124,9 @@ class Leaf(Node):
 
         # Nodes share no common prefix
         return Branch() + self + leaf
+
+    def __len__(self):
+        return 0 if self.value is None else 1
 
     def copy(self):
         return type(self)(self.key, self.value)
@@ -191,6 +202,9 @@ class Extension(Node):
         # Nodes share no common prefix
         return Branch() + self + leaf
 
+    def __len__(self):
+        return len(self.node)
+
     def copy(self):
         return type(self)(self.key, self.node.copy())
 
@@ -230,9 +244,9 @@ class Branch(Node):
             return self.value
 
         head, tail = key[0], key[1:]
-        curr = self.nodes[head]
-        if curr is not None:
-            return curr.get(tail)
+        node = self.nodes[head]
+        if node is not None:
+            return node.get(tail)
 
         raise KeyError('Key not found')
 
@@ -258,6 +272,12 @@ class Branch(Node):
             type(self) is type(other) and
             self.value == other.value and
             all(n1 == n2 for n1, n2 in zip(self.nodes, other.nodes))
+        )
+
+    def __len__(self):
+        return (
+            (0 if self.value is None else 1) +
+            sum(len(n) if n is not None else 0 for n in self.nodes)
         )
 
     def copy(self):
