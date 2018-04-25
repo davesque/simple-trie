@@ -1,22 +1,21 @@
+from io import BytesIO
 from itertools import chain
 from typing import (
     Iterable,
+    Iterator,
+    Optional,
+    Union,
     Sequence,
 )
 
 
-Bytes = Iterable[bytes]
-Nibbles = Iterable[int]
-SizedNibbles = Sequence[int]
-
-
-def bytes_to_nibbles(xs: Bytes) -> Nibbles:
+def bytes_to_nibbles(xs: Union[bytes, BytesIO]) -> Iterator[int]:
     for x in xs:
         yield x // 16
         yield x % 16
 
 
-def nibbles_to_bytes(xs: Nibbles) -> Bytes:
+def nibbles_to_bytes(xs: Iterable[int]) -> Iterator[bytes]:
     odd, even = True, False
     b = 0
 
@@ -33,7 +32,7 @@ def nibbles_to_bytes(xs: Nibbles) -> Bytes:
         raise ValueError('Input array had odd number of nibbles')
 
 
-def hex_prefix(xs: SizedNibbles, t: bool) -> Bytes:
+def hex_prefix(xs: Sequence[int], t: bool) -> Iterator[bytes]:
     flags = 2 if t else 0
 
     if len(xs) % 2 == 0:
@@ -42,8 +41,8 @@ def hex_prefix(xs: SizedNibbles, t: bool) -> Bytes:
     return nibbles_to_bytes(chain((flags + 1,), xs))
 
 
-def indent(txt, prefix, rest_prefix=None):
-    def _g():
+def indent(txt: str, prefix: str, rest_prefix: Optional[str]=None) -> str:
+    def _g() -> Iterator[str]:
         nonlocal prefix
 
         lines = iter(txt.split('\n'))
@@ -58,7 +57,7 @@ def indent(txt, prefix, rest_prefix=None):
     return '\n'.join(_g())
 
 
-def prefix_length(x: Iterable, y: Iterable):
+def prefix_length(x: Iterable, y: Iterable) -> int:
     """
     Determines the length of any common prefix shared by the iterables ``x``
     and ``y``.
