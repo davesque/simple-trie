@@ -1,4 +1,8 @@
-from typing import Union
+from typing import (
+    Any,
+    Union,
+    Tuple,
+)
 import abc
 
 from .utils import (
@@ -8,12 +12,16 @@ from .utils import (
 )
 
 
-class Node(abc.ABC):
+BytesKey = bytes
+NibbleKey = Tuple[int, ...]
+
+
+class Node(metaclass=abc.ABCMeta):
     __slots__ = tuple()
 
     @property
     @abc.abstractmethod
-    def is_empty(self):
+    def is_empty(self):  # pragma: no coverage
         """
         Returns a boolean value that indicates if this node can be safely
         discarded.
@@ -21,14 +29,14 @@ class Node(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get(self, key):
+    def get(self, key: NibbleKey):  # pragma: no coverage
         """
         Returns any value mapped to by ``key`` in this node.
         """
         pass
 
     @abc.abstractmethod
-    def insert(self, node: 'Node'):
+    def insert(self, node: 'Node'):  # pragma: no coverage
         """
         Returns the result of inserting a node into this node.  Must return new
         object.
@@ -36,42 +44,49 @@ class Node(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def delete(self, key):
+    def delete(self, key: NibbleKey):  # pragma: no coverage
         """
         Returns the result of deleting a key from this node.  Must return new
         object.
         """
         pass
 
-    def __add__(self, leaf: 'Leaf'):
-        return self.insert(leaf)
+    @abc.abstractmethod
+    def __len__(self):  # pragma: no coverage
+        """
+        Returns the number of values which are stored under this node and any
+        of its children.
+        """
+        pass
 
-    def __radd__(self, other):
+    @abc.abstractmethod
+    def copy(self):  # pragma: no coverage
+        """
+        Creates a copy of this node.
+        """
+        pass
+
+    def __add__(self, node: 'Node'):
+        return self.insert(node)
+
+    def __radd__(self, other: Any):
         """
         Nodes should overwrite values which do not define an addition
         operation.  For example, ``None + leaf == leaf``.
         """
         return self
 
-    def __sub__(self, key):
+    def __sub__(self, key: NibbleKey):
         return self.delete(key)
 
-    def __eq__(self, other):
+    def __eq__(self, node: 'Node'):
         return (
-            type(self) is type(other) and
+            type(self) is type(node) and
             all(
-                getattr(self, a) == getattr(other, a)
+                getattr(self, a) == getattr(node, a)
                 for a in self.__slots__
             )
         )
-
-    @abc.abstractmethod
-    def __len__(self):
-        """
-        Returns the number of values which are stored under this node and any
-        of its children.
-        """
-        pass
 
 
 class Narrow(metaclass=abc.ABCMeta):
