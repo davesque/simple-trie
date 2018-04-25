@@ -53,17 +53,17 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def __len__(self) -> int:  # pragma: no coverage
+    def copy(self) -> 'Node':  # pragma: no coverage
         """
-        Returns the number of values which are stored under this node and any
-        of its children.
+        Creates a copy of this node.
         """
         pass
 
     @abc.abstractmethod
-    def copy(self) -> 'Node':  # pragma: no coverage
+    def __len__(self) -> int:  # pragma: no coverage
         """
-        Creates a copy of this node.
+        Returns the number of values which are stored under this node and any
+        of its children.
         """
         pass
 
@@ -119,16 +119,16 @@ class Leaf(Narrow, Node):
         self.key = key
         self.value = value
 
-    @property
-    def is_empty(self) -> bool:
-        return self.value is None
-
     def tail(self, i: int=1) -> 'Leaf':
         """
         Returns a new leaf node with the same value as this node and excluding
         the initial ``i`` items in this node's key.
         """
         return type(self)(self.key[i:], self.value)
+
+    @property
+    def is_empty(self) -> bool:
+        return self.value is None
 
     def get(self, key: Nibbles) -> bytes:
         if self.key == key:
@@ -163,11 +163,11 @@ class Leaf(Narrow, Node):
 
         raise KeyError('Key not found')
 
-    def __len__(self) -> int:
-        return 0 if self.value is None else 1
-
     def copy(self) -> 'Leaf':
         return type(self)(self.key, self.value)
+
+    def __len__(self) -> int:
+        return 0 if self.value is None else 1
 
     def __repr__(self) -> str:  # pragma: no coverage
         repr_key = repr(self.key)
@@ -186,10 +186,6 @@ class Extension(Narrow, Node):
         self.key = key
         self.node = node
 
-    @property
-    def is_empty(self) -> bool:
-        return self.node is None
-
     def tail(self, i: int=1) -> Node:
         """
         Returns a new extension node with the same referent node as this node
@@ -202,6 +198,10 @@ class Extension(Narrow, Node):
             return tl.node
 
         return tl
+
+    @property
+    def is_empty(self) -> bool:
+        return self.node is None
 
     def get(self, key: Nibbles) -> bytes:
         i = len(self.key)
@@ -244,11 +244,11 @@ class Extension(Narrow, Node):
 
         raise KeyError('Key not found')
 
-    def __len__(self) -> int:
-        return len(self.node)
-
     def copy(self) -> 'Extension':
         return type(self)(self.key, self.node.copy())
+
+    def __len__(self) -> int:
+        return len(self.node)
 
     def __repr__(self) -> str:  # pragma: no coverage
         repr_key = repr(self.key)
@@ -335,11 +335,10 @@ class Branch(Node):
 
         return branch
 
-    def __eq__(self, other: 'Branch') -> bool:
-        return (
-            type(self) is type(other) and
-            self.value == other.value and
-            all(n1 == n2 for n1, n2 in zip(self.nodes, other.nodes))
+    def copy(self) -> 'Branch':
+        return type(self)(
+            [n.copy() if n is not None else n for n in self.nodes],
+            self.value,
         )
 
     def __len__(self) -> int:
@@ -348,10 +347,11 @@ class Branch(Node):
             sum(len(n) if n is not None else 0 for n in self.nodes)
         )
 
-    def copy(self) -> 'Branch':
-        return type(self)(
-            [n.copy() if n is not None else n for n in self.nodes],
-            self.value,
+    def __eq__(self, other: 'Branch') -> bool:
+        return (
+            type(self) is type(other) and
+            self.value == other.value and
+            all(n1 == n2 for n1, n2 in zip(self.nodes, other.nodes))
         )
 
     def __repr__(self) -> str:  # pragma: no coverage
