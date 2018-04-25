@@ -223,6 +223,13 @@ class Branch(Node):
 
         return branch
 
+    def __eq__(self, other):
+        return (
+            type(self) is type(other) and
+            self.value == other.value and
+            all(n1 == n2 for n1, n2 in zip(self.nodes, other.nodes))
+        )
+
     def copy(self):
         return type(self)(
             [n.copy() if n is not None else n for n in self.nodes],
@@ -248,13 +255,6 @@ class Branch(Node):
             return '{} (\n{}\n)'.format(repr(self.value), '\n'.join(node_reprs))
 
         return repr(self.value)
-
-    def __eq__(self, other):
-        return (
-            type(self) is type(other) and
-            self.value == other.value and
-            all(n1 == n2 for n1, n2 in zip(self.nodes, other.nodes))
-        )
 
 
 class SimpleTrie:
