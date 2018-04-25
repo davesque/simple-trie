@@ -65,6 +65,19 @@ class Leaf(Node):
     def is_empty(self):
         return self.value is None
 
+    def head(self, i=1):
+        """
+        Returns the initial ``i`` items in this node's key.
+        """
+        return self.key[:i]
+
+    def tail(self, i=1):
+        """
+        Returns a new leaf node with the same value as this node and excluding
+        the initial ``i`` items in this node's key.
+        """
+        return type(self)(self.key[i:], self.value)
+
     def get(self, key):
         if self.key == key:
             return self.value

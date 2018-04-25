@@ -41,6 +41,40 @@ def test_leaf_insert():
     )
 
 
+@pytest.mark.parametrize(
+    'leaf, i, head',
+    (
+        (Leaf((10, 11, 12), b'\x00'), None, (10,)),
+        (Leaf((10, 11, 12), b'\x00'), 0, ()),
+        (Leaf((10, 11, 12), b'\x00'), 1, (10,)),
+        (Leaf((10, 11, 12), b'\x00'), 2, (10, 11)),
+        (Leaf((10, 11, 12), b'\x00'), 3, (10, 11, 12)),
+    ),
+)
+def test_leaf_head(leaf, i, head):
+    if i is None:
+        assert leaf.head() == head
+    else:
+        assert leaf.head(i) == head
+
+
+@pytest.mark.parametrize(
+    'leaf, i, tail',
+    (
+        (Leaf((10, 11, 12), b'\x00'), None, Leaf((11, 12), b'\x00')),
+        (Leaf((10, 11, 12), b'\x00'), 0, Leaf((10, 11, 12), b'\x00')),
+        (Leaf((10, 11, 12), b'\x00'), 1, Leaf((11, 12), b'\x00')),
+        (Leaf((10, 11, 12), b'\x00'), 2, Leaf((12,), b'\x00')),
+        (Leaf((10, 11, 12), b'\x00'), 3, Leaf((), b'\x00')),
+    ),
+)
+def test_leaf_tail(leaf, i, tail):
+    if i is None:
+        assert leaf.tail() == tail
+    else:
+        assert leaf.tail(i) == tail
+
+
 def test_extension_insert():
     # Nodes have same key
     branch = Branch()
