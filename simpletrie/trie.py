@@ -1,5 +1,6 @@
 from typing import (
     Any,
+    List,
     Union,
     Tuple,
 )
@@ -12,8 +13,7 @@ from .utils import (
 )
 
 
-BytesKey = bytes
-NibbleKey = Tuple[int, ...]
+Nibbles = Tuple[int, ...]
 
 
 class Node(metaclass=abc.ABCMeta):
@@ -29,7 +29,7 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def get(self, key: NibbleKey):  # pragma: no coverage
+    def get(self, key: Nibbles):  # pragma: no coverage
         """
         Returns any value mapped to by ``key`` in this node.
         """
@@ -44,7 +44,7 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def delete(self, key: NibbleKey):  # pragma: no coverage
+    def delete(self, key: Nibbles):  # pragma: no coverage
         """
         Returns the result of deleting a key from this node.  Must return new
         object.
@@ -76,7 +76,7 @@ class Node(metaclass=abc.ABCMeta):
         """
         return self
 
-    def __sub__(self, key: NibbleKey):
+    def __sub__(self, key: Nibbles):
         return self.delete(key)
 
     def __eq__(self, node: 'Node'):
@@ -96,14 +96,14 @@ class Narrow(metaclass=abc.ABCMeta):
     def is_shallow(self):
         return len(self.key) == 0
 
-    def head(self, i=1):
+    def head(self, i: int=1):
         """
         Returns the initial ``i`` items in this node's key.
         """
         return self.key[:i]
 
     @abc.abstractmethod
-    def tail(self, i=1):
+    def tail(self, i: int=1):
         """
         Returns a new node with the same content as this node and excluding
         the initial ``i`` items in this node's key.
@@ -114,7 +114,7 @@ class Narrow(metaclass=abc.ABCMeta):
 class Leaf(Narrow, Node):
     __slots__ = ('value',)
 
-    def __init__(self, key=None, value=None):
+    def __init__(self, key: Nibbles=None, value: bytes=None):
         self.key = key
         self.value = value
 
@@ -122,14 +122,14 @@ class Leaf(Narrow, Node):
     def is_empty(self):
         return self.value is None
 
-    def tail(self, i=1):
+    def tail(self, i: int=1):
         """
         Returns a new leaf node with the same value as this node and excluding
         the initial ``i`` items in this node's key.
         """
         return type(self)(self.key[i:], self.value)
 
-    def get(self, key):
+    def get(self, key: Nibbles):
         if self.key == key:
             return self.value
 
@@ -156,7 +156,7 @@ class Leaf(Narrow, Node):
         # Nodes share no common prefix
         return Branch() + self + leaf
 
-    def delete(self, key):
+    def delete(self, key: Nibbles):
         if self.key == key:
             return None
 
@@ -181,7 +181,7 @@ class Leaf(Narrow, Node):
 class Extension(Narrow, Node):
     __slots__ = ('node',)
 
-    def __init__(self, key=None, node=None):
+    def __init__(self, key: Nibbles=None, node: Union['Leaf', 'Branch']=None):
         self.key = key
         self.node = node
 
@@ -189,7 +189,7 @@ class Extension(Narrow, Node):
     def is_empty(self):
         return self.node is None
 
-    def tail(self, i=1):
+    def tail(self, i: int=1):
         """
         Returns a new extension node with the same referent node as this node
         and excluding the initial ``i`` items in this node's key.  If the
@@ -202,7 +202,7 @@ class Extension(Narrow, Node):
 
         return tl
 
-    def get(self, key):
+    def get(self, key: Nibbles):
         i = len(self.key)
         head, tail = key[:i], key[i:]
 
@@ -211,7 +211,7 @@ class Extension(Narrow, Node):
 
         raise KeyError('Key not found')
 
-    def insert(self, leaf):
+    def insert(self, leaf: Leaf):
         # Special cases
         if self.is_shallow:
             return self.node + leaf
@@ -229,7 +229,7 @@ class Extension(Narrow, Node):
         # Nodes share no common prefix
         return Branch() + self + leaf
 
-    def delete(self, key):
+    def delete(self, key: Nibbles):
         i = len(self.key)
         head, tail = key[:i], key[i:]
 
@@ -262,7 +262,7 @@ class Extension(Narrow, Node):
 class Branch(Node):
     __slots__ = ('nodes', 'value')
 
-    def __init__(self, nodes=None, value=None):
+    def __init__(self, nodes: List[Node]=None, value: bytes=None):
         if nodes is None:
             self.nodes = [None] * 16
         else:
@@ -270,17 +270,17 @@ class Branch(Node):
 
         self.value = value
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int):
         return self.nodes[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: int, value: bytes):
         self.nodes[key] = value
 
     @property
     def is_empty(self):
         return all(n is None for n in self.nodes) and self.value is None
 
-    def get(self, key):
+    def get(self, key: Nibbles):
         if len(key) == 0:
             if self.value is None:
                 raise KeyError('Key not found')
@@ -311,7 +311,7 @@ class Branch(Node):
         branch[node.key[0]] += node.tail()
         return branch
 
-    def delete(self, key):
+    def delete(self, key: Nibbles):
         if len(key) == 0:
             if self.value is None:
                 raise KeyError('Key not found')
@@ -334,7 +334,7 @@ class Branch(Node):
 
         return branch
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Branch'):
         return (
             type(self) is type(other) and
             self.value == other.value and
@@ -380,7 +380,7 @@ class SimpleTrie:
     def __init__(self):
         self._root = None
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: bytes) -> bytes:
         if self._root is None:
             raise KeyError(repr(key))
 
@@ -389,13 +389,13 @@ class SimpleTrie:
         except KeyError:
             raise KeyError(repr(key))
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: bytes, value: bytes) -> None:
         self._root += Leaf(
             tuple(bytes_to_nibbles(key)),
             value,
         )
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: bytes) -> None:
         if self._root is None:
             raise KeyError(repr(key))
 
@@ -404,11 +404,11 @@ class SimpleTrie:
         except KeyError:
             raise KeyError(repr(key))
 
-    def __len__(self):
+    def __len__(self) -> int:
         if self._root is None:
             return 0
 
         return len(self._root)
 
-    def __repr__(self):  # pragma: no coverage
+    def __repr__(self) -> str:  # pragma: no coverage
         return repr(self._root)
