@@ -82,6 +82,26 @@ def test_node_radd_properties(node):
     assert None + node == node
 
 
+@given(nodes, leaves)
+def test_delete_insert_get_leaves(node, leaf):
+    try:
+        node -= leaf.key
+    except KeyError:
+        # Value with leaf's key may not be present in node
+        pass
+
+    # Key should definitely not exist in node or node should be None
+    if node is not None:
+        with pytest.raises(KeyError):
+            node.get(leaf.key)
+
+    # Insert should not complain
+    node += leaf
+
+    # Key should definitely be mapped to value
+    assert node.get(leaf.key) == leaf.value
+
+
 key_value_pairs = st.tuples(st.binary(max_size=100), st.binary())
 
 
