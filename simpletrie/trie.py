@@ -309,7 +309,14 @@ class Branch(Node):
 
         # Insert deep node into branch
         branch = type(self)(self.nodes[:], self.value)
-        branch[node.key[0]] += node.tail()
+        if isinstance(node, Extension):
+            # We don't try to intelligently insert extensions into branches.
+            # This facility is only used by the Extension.insert method in
+            # specific cases where an extension must insert itself into an
+            # empty branch.
+            branch[node.key[0]] = node.tail()
+        else:
+            branch[node.key[0]] += node.tail()
         return branch
 
     def delete(self, key: Nibbles) -> Optional['Branch']:

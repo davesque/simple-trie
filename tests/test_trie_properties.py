@@ -82,8 +82,9 @@ def test_node_radd_properties(node):
     assert None + node == node
 
 
+@settings(max_examples=25)
 @given(nodes, leaves)
-def test_delete_insert_get_leaves(node, leaf):
+def test_delete_insert_get_leaf_for_node(node, leaf):
     try:
         node -= leaf.key
     except KeyError:
@@ -110,7 +111,7 @@ key_value_pairs = st.tuples(st.binary(max_size=100), st.binary())
 def test_simple_trie_properties(pairs):
     t = SimpleTrie()
 
-    # Trie should be empty and contain only root node
+    # Trie should contain no values
     assert len(t) == 0
 
     for i, (key, value) in enumerate(pairs):
@@ -144,5 +145,5 @@ def test_simple_trie_properties(pairs):
         # There should be one less value in trie after deletion
         assert len(t) == len(pairs) - i - 1
 
-    # Trie should be empty and contain only root node
+    # Trie contain no values
     assert len(t) == 0
