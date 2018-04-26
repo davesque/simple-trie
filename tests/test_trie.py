@@ -1,3 +1,5 @@
+import functools
+
 from hypothesis import (
     given,
     settings,
@@ -11,17 +13,72 @@ from simpletrie.trie import (
     Leaf,
     SimpleTrie,
 )
-
-
-@pytest.mark.parametrize(
-    'node',
-    (
-        Leaf((), None),
-        Extension((), None),
-        Branch(),
-    ),
+from simpletrie.utils import (
+    bytes_to_nibbles,
 )
-def test_node_radd(node):
+
+
+def unary(f):
+    """
+    Converts a callable into a unary version of itself.
+    """
+    @functools.wraps(f)
+    def f_(args):
+        return f(*args)
+
+    return f_
+
+
+def make_branch_strategy(s):
+    return st.tuples(
+        st.lists(s, min_size=16, max_size=16),
+        st.one_of(st.none(), values),
+    ).map(unary(Branch))
+
+
+def make_extension_strategy(s):
+    return st.tuples(
+        non_zero_nibbles,
+        make_branch_strategy(s),
+    ).map(unary(Extension))
+
+
+nibbles = st.binary().map(bytes_to_nibbles).map(tuple)
+non_zero_nibbles = st.binary(min_size=1).map(bytes_to_nibbles).map(tuple)
+values = st.binary()
+
+leaves = st.tuples(
+    nibbles,
+    values,
+).map(unary(Leaf))
+
+nodes = st.recursive(
+    leaves,
+    lambda s: st.one_of(
+        # Recursion could be branch
+        make_branch_strategy(s),
+        # Recursion could be extension
+        make_extension_strategy(s),
+    ),
+    max_leaves=50,
+)
+
+extensions = make_extension_strategy(nodes)
+branches = make_branch_strategy(nodes)
+
+
+@settings(max_examples=25)
+@given(nodes)
+def test_node_copy_properties(node):
+    copy = node.copy()
+
+    assert node == copy
+    assert node is not copy
+
+
+@settings(max_examples=25)
+@given(nodes)
+def test_node_radd_properties(node):
     assert None + node == node
 
 
