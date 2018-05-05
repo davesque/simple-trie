@@ -37,17 +37,17 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def insert(self, node: 'Node') -> 'Node':  # pragma: no coverage
+    def delete(self, key: Nibbles) -> Optional['Node']:  # pragma: no coverage
         """
-        Returns the result of inserting a node into this node.  Must return new
+        Returns the result of deleting a key from this node.  Must return new
         object.
         """
         pass
 
     @abc.abstractmethod
-    def delete(self, key: Nibbles) -> Optional['Node']:  # pragma: no coverage
+    def insert(self, node: 'Node') -> 'Node':  # pragma: no coverage
         """
-        Returns the result of deleting a key from this node.  Must return new
+        Returns the result of inserting a node into this node.  Must return new
         object.
         """
         pass
@@ -162,6 +162,12 @@ class Leaf(Narrow, Node):
 
         raise KeyError('Key not found')
 
+    def delete(self, key: Nibbles) -> None:
+        if self.key == key:
+            return None
+
+        raise KeyError('Key not found')
+
     def insert(self, leaf: 'Leaf') -> Node:
         # Special cases
         if self.key == leaf.key:
@@ -182,12 +188,6 @@ class Leaf(Narrow, Node):
 
         # Nodes share no common prefix
         return Branch() + self + leaf
-
-    def delete(self, key: Nibbles) -> None:
-        if self.key == key:
-            return None
-
-        raise KeyError('Key not found')
 
     def copy(self) -> 'Leaf':
         return type(self)(self.key, self.value)
@@ -238,6 +238,20 @@ class Extension(Narrow, Node):
 
         raise KeyError('Key not found')
 
+    def delete(self, key: Nibbles) -> Optional['Extension']:
+        i = len(self.key)
+        head, tail = key[:i], key[i:]
+
+        if self.key == head:
+            ext = type(self)(self.key, self.node.delete(tail))
+
+            if ext.is_empty:
+                return None
+
+            return ext
+
+        raise KeyError('Key not found')
+
     def insert(self, leaf: Leaf) -> Node:
         # Special cases
         if self.is_shallow:
@@ -255,20 +269,6 @@ class Extension(Narrow, Node):
 
         # Nodes share no common prefix
         return Branch() + self + leaf
-
-    def delete(self, key: Nibbles) -> Optional['Extension']:
-        i = len(self.key)
-        head, tail = key[:i], key[i:]
-
-        if self.key == head:
-            ext = type(self)(self.key, self.node.delete(tail))
-
-            if ext.is_empty:
-                return None
-
-            return ext
-
-        raise KeyError('Key not found')
 
     def copy(self) -> 'Extension':
         return type(self)(self.key, self.node.copy())
@@ -321,6 +321,29 @@ class Branch(Node):
 
         raise KeyError('Key not found')
 
+    def delete(self, key: Nibbles) -> Optional['Branch']:
+        if len(key) == 0:
+            if self.value is None:
+                raise KeyError('Key not found')
+
+            branch = type(self)(self.nodes[:], None)
+            if branch.is_empty:
+                return None
+
+            return branch
+
+        head, tail = key[0], key[1:]
+        node = self.nodes[head]
+        if node is None:
+            raise KeyError('Key not found')
+
+        branch = type(self)(self.nodes[:], self.value)
+        branch[head] = node.delete(tail)
+        if branch.is_empty:
+            return None
+
+        return branch
+
     def insert(self, node: Union[Leaf, Extension]) -> 'Branch':
         """
         Inserts a leaf or extension node into a branch node.
@@ -343,29 +366,6 @@ class Branch(Node):
             branch[node.key[0]] = node.tail()
         else:
             branch[node.key[0]] += node.tail()
-        return branch
-
-    def delete(self, key: Nibbles) -> Optional['Branch']:
-        if len(key) == 0:
-            if self.value is None:
-                raise KeyError('Key not found')
-
-            branch = type(self)(self.nodes[:], None)
-            if branch.is_empty:
-                return None
-
-            return branch
-
-        head, tail = key[0], key[1:]
-        node = self.nodes[head]
-        if node is None:
-            raise KeyError('Key not found')
-
-        branch = type(self)(self.nodes[:], self.value)
-        branch[head] = node.delete(tail)
-        if branch.is_empty:
-            return None
-
         return branch
 
     def copy(self) -> 'Branch':
@@ -428,12 +428,6 @@ class SimpleTrie:
         except KeyError:
             raise KeyError(repr(key))
 
-    def __setitem__(self, key: bytes, value: bytes) -> None:
-        self._root += Leaf(
-            tuple(bytes_to_nibbles(key)),
-            value,
-        )
-
     def __delitem__(self, key: bytes) -> None:
         if self._root is None:
             raise KeyError(repr(key))
@@ -442,6 +436,12 @@ class SimpleTrie:
             self._root -= tuple(bytes_to_nibbles(key))
         except KeyError:
             raise KeyError(repr(key))
+
+    def __setitem__(self, key: bytes, value: bytes) -> None:
+        self._root += Leaf(
+            tuple(bytes_to_nibbles(key)),
+            value,
+        )
 
     def __len__(self) -> int:
         if self._root is None:
