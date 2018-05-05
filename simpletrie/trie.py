@@ -80,12 +80,38 @@ class Node(metaclass=abc.ABCMeta):
     def __sub__(self, key: Nibbles) -> 'Node':
         return self.delete(key)
 
+    @classmethod
+    def _all_slots(cls):
+        try:
+            return cls._all_slots_cache
+        except AttributeError:
+            pass
+
+        all_slots = sum(
+            (c.__slots__ for c in cls.__mro__ if hasattr(c, '__slots__')),
+            (),
+        )
+
+        # Preserve unique slot order
+        visited_slots = set()
+        ordered_unique_slots = []
+        for s in all_slots:
+            if s in visited_slots:
+                continue
+
+            ordered_unique_slots.append(s)
+            visited_slots.add(s)
+
+        cls._all_slots_cache = tuple(ordered_unique_slots)
+
+        return cls._all_slots_cache
+
     def __eq__(self, node: 'Node') -> bool:
         return (
             type(self) is type(node) and
             all(
                 getattr(self, a) == getattr(node, a)
-                for a in self.__slots__
+                for a in self._all_slots()
             )
         )
 

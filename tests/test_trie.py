@@ -7,6 +7,12 @@ from simpletrie.trie import (
 )
 
 
+def test_node_all_slots():
+    assert Leaf._all_slots() == ('value', 'key')
+    assert Extension._all_slots() == ('node', 'key')
+    assert Branch._all_slots() == ('nodes', 'value')
+
+
 @pytest.mark.parametrize(
     'node, expected',
     (
