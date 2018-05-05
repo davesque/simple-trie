@@ -254,9 +254,6 @@ class Extension(Narrow, Node):
 
     def insert(self, leaf: Leaf) -> Node:
         # Special cases
-        if self.is_shallow:
-            return self.node + leaf
-
         if leaf.is_shallow:
             return Branch(value=leaf.value) + self
 
