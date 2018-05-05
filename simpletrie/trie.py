@@ -409,6 +409,11 @@ class Branch(Node):
 
 
 class SimpleTrie:
+    """
+    An immutable, base-16 radix tree that uses an in-memory database with
+    pointers as references.  As a space and time saving strategy,
+    ``SimpleTrie`` uses two "narrow" node types: Extension and Leaf.
+    """
     __slots__ = ('_root',)
 
     def __init__(self) -> None:
